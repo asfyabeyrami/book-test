@@ -11,7 +11,7 @@ export const User = createParamDecorator(
     if (data === 'id') {
       const id = user?.adminId || user?.id || user?.sub;
       if (!id) {
-        throw new BadRequestException('شناسه کاربر یافت نشد');
+        throw new BadRequestException('user id not found');
       }
 
       return id;

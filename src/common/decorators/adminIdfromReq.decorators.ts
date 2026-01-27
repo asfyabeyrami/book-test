@@ -13,7 +13,7 @@ export const Admin = createParamDecorator(
       const id = admin?.id;
 
       if (!id) {
-        throw new BadRequestException('شناسه ادمین یافت نشد');
+        throw new BadRequestException('admin id not found');
       }
 
       return id;
