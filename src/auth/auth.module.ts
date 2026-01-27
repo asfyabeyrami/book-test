@@ -5,6 +5,9 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 @Module({
   imports: [

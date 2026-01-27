@@ -11,16 +11,22 @@ export type JwtRefreshPayload = {
 };
 
 function cookieExtractor(req: Request): string | null {
-  if (req && req.cookies) return req.cookies[process.env.REFRESH_COOKIE_NAME || 'refresh_token'] ?? null;
+  if (req && req.cookies)
+    return (
+      req.cookies[process.env.REFRESH_COOKIE_NAME || 'refresh_token'] ?? null
+    );
   return null;
 }
 
 @Injectable()
-export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+export class JwtRefreshStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
   constructor(config: ConfigService) {
     super({
       jwtFromRequest: cookieExtractor,
-      secretOrKey: config.getOrThrow<string>('JWT_REFRESH_SECRET'),
+      secretOrKey: config.getOrThrow<string>('SECRET_KEY'),
       passReqToCallback: true,
     });
   }

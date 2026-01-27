@@ -5,6 +5,7 @@ import {
   Post,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
@@ -48,12 +49,18 @@ export class AuthController {
     return { user: result.user, accessToken: result.accessToken };
   }
 
-  @Roles(Role.USER)
+  @Public()
   @ApiBearerAuth()
   @Post('refresh')
   async refresh(@Req() req: any, @Res({ passthrough: true }) res: any) {
-    const { sub, refreshToken } = req.user;
-    const tokens = await this.auth.refresh(sub, refreshToken);
+    console.log('ssssssss', req.cookies);
+    const token = req.cookies['refresh_token'];
+
+    if (!token) throw new UnauthorizedException('No refresh token');
+
+    const payload = await this.auth.verifyRefreshToken(token);
+    const tokens = await this.auth.refresh(payload.sub, token);
+
     this.setRefreshCookie(res, tokens.refreshToken);
     return { accessToken: tokens.accessToken };
   }

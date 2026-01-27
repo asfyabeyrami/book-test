@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
@@ -14,16 +19,24 @@ export class AuthService {
     private config: ConfigService,
   ) {}
 
-  private signAccessToken(payload: { sub: string; email: string; role: 'USER' | 'ADMIN' }) {
+  private signAccessToken(payload: {
+    sub: string;
+    email: string;
+    role: 'USER' | 'ADMIN';
+  }) {
     return this.jwt.signAsync(payload, {
-      secret: this.config.getOrThrow('JWT_ACCESS_SECRET'),
+      secret: this.config.getOrThrow('SECRET_KEY'),
       expiresIn: this.config.getOrThrow('JWT_ACCESS_EXPIRES_IN'),
     });
   }
 
-  private signRefreshToken(payload: { sub: string; email: string; role: 'USER' | 'ADMIN' }) {
+  private signRefreshToken(payload: {
+    sub: string;
+    email: string;
+    role: 'USER' | 'ADMIN';
+  }) {
     return this.jwt.signAsync(payload, {
-      secret: this.config.getOrThrow('JWT_REFRESH_SECRET'),
+      secret: this.config.getOrThrow('SECRET_KEY'),
       expiresIn: this.config.getOrThrow('JWT_REFRESH_EXPIRES_IN'),
     });
   }
@@ -37,7 +50,9 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
-    const exists = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const exists = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
     if (exists) throw new BadRequestException('Email already in use');
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -58,7 +73,9 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const ok = await bcrypt.compare(dto.password, user.passwordHash);
@@ -80,13 +97,18 @@ export class AuthService {
   }
 
   async refresh(userId: string, refreshToken: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user || !user.refreshHash) throw new ForbiddenException('Access denied');
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.refreshHash)
+      throw new ForbiddenException('Access denied');
 
     const match = await bcrypt.compare(refreshToken, user.refreshHash);
     if (!match) throw new ForbiddenException('Access denied');
 
     const payload = { sub: user.id, email: user.email, role: user.role };
+
     const [accessToken, newRefreshToken] = await Promise.all([
       this.signAccessToken(payload),
       this.signRefreshToken(payload),
@@ -95,6 +117,16 @@ export class AuthService {
     await this.setRefreshHash(user.id, newRefreshToken);
 
     return { accessToken, refreshToken: newRefreshToken };
+  }
+
+  async verifyRefreshToken(token: string) {
+    try {
+      return await this.jwt.verifyAsync(token, {
+        secret: this.config.getOrThrow('SECRET_KEY'),
+      });
+    } catch {
+      throw new ForbiddenException('Invalid refresh token');
+    }
   }
 
   async logout(userId: string) {
