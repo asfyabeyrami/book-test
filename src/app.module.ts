@@ -1,14 +1,14 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { AuthGuard } from './auth/Guard/auth.guard';
-import { AuthorizationGuard } from './auth/Guard/authorization.guard';
-import { GlobalExceptionFilter } from './pipe/exception.filter';
-import { ResponseInterceptor } from './pipe/response.interceptor';
-import { LoggerMiddleware } from './auth/Guard/logger.middleware';
+import { AuthorizationGuard } from './common/Guard/authorization-guard';
+import { GlobalExceptionFilter } from './common/pipe/exception.filter';
+import { ResponseInterceptor } from './common/pipe/response.interceptor';
+import { LoggerMiddleware } from './common/Middlewares/logger-middleware';
 import { BooksModule } from './books/books.module';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from './prisma/prisma.module';
+import { PrismaModule } from './common/prisma/prisma.module';
+import { AuthGuard } from './common/Guard/auth-guard';
 
 @Module({
   imports: [

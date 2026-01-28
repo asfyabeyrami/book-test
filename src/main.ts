@@ -4,11 +4,14 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
+import { ConfigService } from '@nestjs/config';
+import { SwaggerConfig } from './common/configs/add-swagger.config';
 
+const configService = new ConfigService();
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  const sessionSecret = process.env.SECRET_KEY;
+  const sessionSecret = configService.getOrThrow('SECRET_KEY');
 
   if (!sessionSecret) {
     throw new Error('SECRET_KEY is not defined in environment variables');
@@ -27,20 +30,9 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  const config = new DocumentBuilder()
-    .setTitle('Book')
-    .setDescription('Api Documentation')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document, {
-    jsonDocumentUrl: '/swagger-json',
-    swaggerOptions: {
-      persistAuthorization: true,
-    },
-  });
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+  SwaggerConfig.AddTo(app);
+
+  await app.listen(configService.getOrThrow('PORT') ?? 3000, '0.0.0.0');
 
   console.log(`app running on : ${await app.getUrl()}`);
 }

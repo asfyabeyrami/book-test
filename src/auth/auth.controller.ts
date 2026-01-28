@@ -10,8 +10,8 @@ import {
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
-import { RegisterDto } from 'src/DTO/register.dto';
-import { LoginDto } from 'src/DTO/login.dto';
+import { RegisterDto } from 'src/DTO/register-dto';
+import { LoginDto } from 'src/DTO/login-dto';
 import { Public, Roles } from 'src/common/decorators/roles.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@prisma/client';

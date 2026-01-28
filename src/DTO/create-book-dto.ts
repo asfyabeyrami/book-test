@@ -10,18 +10,11 @@ export class CreateBookDto {
   title: string;
 
   @ApiProperty({
-    type: String,
-  })
-  @IsString()
-  @MinLength(1)
-  author: string;
-
-  @ApiProperty({
-    type: String,
+    type: Date,
   })
   @IsOptional()
   @IsDateString()
-  publishedAt?: string;
+  publishedAt?: Date;
 }
 
 export class UpdateBookDto {

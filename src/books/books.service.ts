@@ -1,46 +1,58 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateBookDto, UpdateBookDto } from 'src/DTO/create-book.dto';
+import { CreateBookDto, UpdateBookDto } from 'src/DTO/create-book-dto';
+import { BookDataAccess } from 'src/DataAccess/book-dataAccess';
 
 @Injectable()
 export class BooksService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly bookDataAccess: BookDataAccess) {}
 
-  create(dto: CreateBookDto) {
-    return this.prisma.book.create({
-      data: {
-        title: dto.title,
-        author: dto.author,
-        publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : null,
-      },
-    });
+  async create(dto: CreateBookDto, userId: string) {
+    try {
+      const result = await this.bookDataAccess.create(dto, userId);
+      return result;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  findAll() {
-    return this.prisma.book.findMany({ orderBy: { createdAt: 'desc' } });
+  async findAll() {
+    try {
+      return await this.bookDataAccess.findAll();
+    } catch (error) {
+      throw error;
+    }
   }
 
   async findOne(id: string) {
-    const book = await this.prisma.book.findUnique({ where: { id } });
-    if (!book) throw new NotFoundException('Book not found');
-    return book;
+    try {
+      const book = await this.bookDataAccess.findOne(id);
+      if (!book) throw new NotFoundException('Book not found');
+      return book;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  async update(id: string, dto: UpdateBookDto) {
-    await this.findOne(id);
-    return this.prisma.book.update({
-      where: { id },
-      data: {
-        title: dto.title,
-        author: dto.author,
-        publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : undefined,
-      },
-    });
+  async update(id: string, dto: UpdateBookDto, userId: string) {
+    try {
+      const book = await this.findOne(id);
+      if (!book) throw new NotFoundException('Book not found');
+
+      return await this.bookDataAccess.update(id, dto, userId);
+    } catch (error) {
+      throw error;
+    }
   }
 
   async remove(id: string) {
-    await this.findOne(id);
-    await this.prisma.book.delete({ where: { id } });
-    return { success: true };
+    try {
+      const book = await this.findOne(id);
+      if (!book) throw new NotFoundException('Book not found');
+
+      await this.bookDataAccess.remove(id);
+      return { success: true };
+    } catch (error) {
+      throw error;
+    }
   }
 }

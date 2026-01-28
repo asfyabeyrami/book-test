@@ -5,22 +5,23 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../common/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { LoginDto } from 'src/DTO/login.dto';
-import { RegisterDto } from 'src/DTO/register.dto';
+import { LoginDto } from 'src/DTO/login-dto';
+import { RegisterDto } from 'src/DTO/register-dto';
+import { AuthDataAccess } from 'src/DataAccess/auth-dataAccess';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
+    private authDataAccess: AuthDataAccess,
     private jwt: JwtService,
     private config: ConfigService,
   ) {}
 
   private signAccessToken(payload: {
-    sub: string;
+    userId: string;
     email: string;
     role: 'USER' | 'ADMIN';
   }) {
@@ -31,7 +32,7 @@ export class AuthService {
   }
 
   private signRefreshToken(payload: {
-    sub: string;
+    userId: string;
     email: string;
     role: 'USER' | 'ADMIN';
   }) {
@@ -43,25 +44,17 @@ export class AuthService {
 
   private async setRefreshHash(userId: string, refreshToken: string) {
     const refreshHash = await bcrypt.hash(refreshToken, 10);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshHash },
-    });
+    await this.authDataAccess.refreshHash(userId, refreshHash);
   }
 
   async register(dto: RegisterDto) {
-    const exists = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
+    const exists = await this.authDataAccess.findByEmail(dto.email);
     if (exists) throw new BadRequestException('Email already in use');
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const user = await this.prisma.user.create({
-      data: { email: dto.email, passwordHash },
-      select: { id: true, email: true, role: true },
-    });
+    const user = await this.authDataAccess.create(dto.email, passwordHash);
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = { userId: user.id, email: user.email, role: user.role };
     const [accessToken, refreshToken] = await Promise.all([
       this.signAccessToken(payload),
       this.signRefreshToken(payload),
@@ -73,15 +66,13 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
+    const user = await this.authDataAccess.findByEmail(dto.email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const ok = await bcrypt.compare(dto.password, user.passwordHash);
     if (!ok) throw new UnauthorizedException('Invalid credentials');
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = { userId: user.id, email: user.email, role: user.role };
     const [accessToken, refreshToken] = await Promise.all([
       this.signAccessToken(payload),
       this.signRefreshToken(payload),
@@ -97,9 +88,7 @@ export class AuthService {
   }
 
   async refresh(userId: string, refreshToken: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.authDataAccess.findById(userId);
 
     if (!user || !user.refreshHash)
       throw new ForbiddenException('Access denied');
@@ -107,7 +96,7 @@ export class AuthService {
     const match = await bcrypt.compare(refreshToken, user.refreshHash);
     if (!match) throw new ForbiddenException('Access denied');
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = { userId: user.id, email: user.email, role: user.role };
 
     const [accessToken, newRefreshToken] = await Promise.all([
       this.signAccessToken(payload),
@@ -130,10 +119,7 @@ export class AuthService {
   }
 
   async logout(userId: string) {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshHash: null },
-    });
+    await this.authDataAccess.logout(userId);
     return { success: true };
   }
 }
