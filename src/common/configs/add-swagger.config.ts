@@ -6,6 +6,7 @@ export class SwaggerConfig {
     const config = new DocumentBuilder()
       .setTitle('Books Service')
       .setDescription('API documentation for the Books Service.')
+      .addBearerAuth()
       .setVersion('1.0')
       .build();
 

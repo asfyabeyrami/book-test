@@ -1,11 +1,11 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { ConfigService } from '@nestjs/config';
 
-export const prismaConfig = {
+export const prismaConfig = (config: ConfigService) => ({
   adapter: new PrismaPg(
     new Pool({
-      connectionString:
-        'postgresql://postgres:123456789@localhost:5432/book?schema=public',
+      connectionString: config.get<string>('DATABASE_URL'),
     }),
   ),
-};
+});

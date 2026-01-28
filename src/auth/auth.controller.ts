@@ -59,7 +59,7 @@ export class AuthController {
     if (!token) throw new UnauthorizedException('No refresh token');
 
     const payload = await this.auth.verifyRefreshToken(token);
-    const tokens = await this.auth.refresh(payload.sub, token);
+    const tokens = await this.auth.refresh(payload.userId, token);
 
     this.setRefreshCookie(res, tokens.refreshToken);
     return { accessToken: tokens.accessToken };
@@ -71,7 +71,7 @@ export class AuthController {
   async logout(@Req() req: any, @Res({ passthrough: true }) res: any) {
     const name = process.env.REFRESH_COOKIE_NAME || 'refresh_token';
     res.clearCookie(name, { path: '/auth/refresh' });
-    return this.auth.logout(req.user.sub);
+    return this.auth.logout(req.user.userId);
   }
 
   @ApiBearerAuth()
