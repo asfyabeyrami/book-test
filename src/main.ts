@@ -1,10 +1,9 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import session from 'express-session';
-import cookieParser from 'cookie-parser';
 import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import cookieParser from 'cookie-parser';
+import session from 'express-session';
+import { AppModule } from './app.module';
 import { SwaggerConfig } from './common/configs/add-swagger.config';
 
 const configService = new ConfigService();
